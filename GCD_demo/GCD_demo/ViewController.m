@@ -93,8 +93,65 @@
     NSLog(@"end-%@",[NSThread currentThread]);
 }
 
+
+// 嵌套 begin end 1 3 2  开一条线程
+- (void)asyncSerNest {
+    dispatch_queue_t queqe = dispatch_queue_create("sv.dispatch", DISPATCH_QUEUE_SERIAL);
+    NSLog(@"begin-%@",[NSThread currentThread]);
+    dispatch_async(queqe, ^{
+        NSLog(@"1-%@",[NSThread currentThread]);
+        dispatch_async(queqe, ^{
+            NSLog(@"2-%@",[NSThread currentThread]);
+        });
+        NSLog(@"3-%@",[NSThread currentThread]);
+    });
+    NSLog(@"end-%@",[NSThread currentThread]);
+}
+
+// 串行队列,死锁
+- (void)asyncSyncSerNest {
+    dispatch_queue_t queqe = dispatch_queue_create("sv.dispatch", DISPATCH_QUEUE_SERIAL);
+    NSLog(@"begin-%@",[NSThread currentThread]);
+    dispatch_async(queqe, ^{
+        NSLog(@"1-%@",[NSThread currentThread]);
+        dispatch_sync(queqe, ^{
+            NSLog(@"2-%@",[NSThread currentThread]);
+        });
+        NSLog(@"3-%@",[NSThread currentThread]);
+    });
+    NSLog(@"end-%@",[NSThread currentThread]);
+}
+
+
+// 死锁
+- (void)syncLock {
+    NSLog(@"begin-%@",[NSThread currentThread]);
+    dispatch_sync(dispatch_get_main_queue(), ^{
+       NSLog(@"1-%@",[NSThread currentThread]);
+    });
+    NSLog(@"end-%@",[NSThread currentThread]);
+}
+
+- (void)juejin1 {
+    NSLog(@"1");
+    dispatch_sync(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0), ^{
+        NSLog(@"2");
+    });
+    NSLog(@"3"); // 1 2 3
+}
+
+- (void)hitAlibb1 {
+    NSLog(@"1-%@",[NSThread currentThread]); // 任务1
+    dispatch_sync(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0), ^{
+        NSLog(@"2-%@",[NSThread currentThread]); // 任务2
+    });
+    NSLog(@"3-%@",[NSThread currentThread]); // 任务3
+} // 1 2 3 1个线程!!!!! 没有async就不会开线程
+
 -(void)touchesBegan:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event {
-    [self asyncCon];
+    [self hitAlibb1];
 }
 
 @end
+
+// 添加任务的顺序??
